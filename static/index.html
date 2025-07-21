@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sensör Verisi</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Son Sensör Değeri</h1>
+  <p id="sensor-value">Yükleniyor...</p>
+
+  <h2>Geçmiş Veriler (Son 50)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Değer (°C)</th>
+        <th>Zaman</th>
+      </tr>
+    </thead>
+    <tbody id="history-table-body">
+      <tr><td colspan="3">Yükleniyor...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    async function fetchLatest() {
+      const res = await fetch("http://localhost:8080/data/latest");
+      const data = await res.json();
+      document.getElementById("sensor-value").innerText =
+        `Değer: ${data.value.toFixed(2)} °C (Zaman: ${data.created_at})`;
+    }
+
+    async function fetchHistory() {
+      const res = await fetch("http://localhost:8080/data/all");
+      const data = await res.json();
+      const tbody = document.getElementById("history-table-body");
+      tbody.innerHTML = "";
+
+      data.forEach(entry => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${entry.id}</td>
+          <td>${entry.value.toFixed(2)}</td>
+          <td>${new Date(entry.created_at).toLocaleString()}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3">Veri bulunamadı</td></tr>`;
+      }
+    }
+
+    // İlk çağrılar
+    fetchLatest();
+    fetchHistory();
+
+    // Periyodik güncellemeler
+    setInterval(fetchLatest, 3000);
+    setInterval(fetchHistory, 10000);
+  </script>
+</body>
+</html>
